@@ -8,15 +8,11 @@ try {
         'trace' => 1,
         'exceptions' => 1,
         'connection_timeout' => 20, // увеличить таймаут
-        'stream_context' => stream_context_create([
-            'http' => [
-                'timeout' => 25,
-                'header' => "Content-Type: application/soap+xml; charset=utf-8\r\nUser-Agent: PHP-SOAP-CURL"
-            ]
-        ]),
-        'login' => 'Администратор 1C',      // если требуется авторизация Booking
-        'password' => '',
-        'soap_version' => SOAP_1_2
+        'login' => 'Booking',      // если требуется авторизация Booking
+        'password' => 'Booking',
+        'soap_version' => SOAP_1_2,
+        'location' => 'http://217.76.41.210:9090/hotel/ws/ReservationInterfaces/1CHotelReservationInterfaces.1cws'
+
     ]);
 
     // Параметры запроса (если необходимо, можно передать)
@@ -25,8 +21,7 @@ try {
         'LanguageCode' => 'RU' // или 'EN', если нужен английский
     ];
     // Вызов метода GetHotelsList без параметров (или с нужными параметрами)
-    $response   = '';
-    $response = $client->GetHotelsList($params,$response);//$response = 
+    $response = $client->GetHotelsList($params);//$response = 
     // $response = $client->__soapCall("GetHotelsList", [$params]);//GetHotelsList
 
     // Вывод результата
