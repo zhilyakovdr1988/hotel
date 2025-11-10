@@ -7,11 +7,11 @@ try {
     $client = new SoapClient($wsdl, [
         'trace' => 1,
         'exceptions' => 1,
-        'connection_timeout' => 5, // увеличить таймаут
+        'connection_timeout' => 20, // увеличить таймаут
         'stream_context' => stream_context_create([
             'http' => [
-                'timeout' => 7,
-                'header' => 'User-Agent: PHP-SOAP-CURL'
+                'timeout' => 25,
+                'header' => "Content-Type: application/soap+xml; charset=utf-8\r\nUser-Agent: PHP-SOAP-CURL"
             ]
         ]),
         'login' => 'Администратор 1C',      // если требуется авторизация Booking
@@ -25,8 +25,9 @@ try {
         'LanguageCode' => 'RU' // или 'EN', если нужен английский
     ];
     // Вызов метода GetHotelsList без параметров (или с нужными параметрами)
-    //$response = $client->GetHotelsList($params);
-     $response = $client->__soapCall("GetHotelsList", [$params]);//GetHotelsList
+    $response   = '';
+    $response = $client->GetHotelsList($params,$response);//$response = 
+    // $response = $client->__soapCall("GetHotelsList", [$params]);//GetHotelsList
 
     // Вывод результата
     echo "Ответ сервера:" . PHP_EOL;
