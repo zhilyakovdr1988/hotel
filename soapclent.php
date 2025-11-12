@@ -13,7 +13,8 @@ class HotelReservationClient
     private $connectionTimeout;
     private $lastRequest;
     private $lastResponse;
-
+    public $ExternalSystemCode;
+    public $LanguageCode;
     /**
      * Конструктор класса и инициализация SOAP клиента
      *
@@ -23,6 +24,7 @@ class HotelReservationClient
      * @param string $location Эндпоинт для вызова методов(по умолчанию $wsdl)
      * @param int    $connectionTimeout Таймаут соединения
      * @param int    $soapVersion SOAP версия (по умолчанию SOAP_1_2)
+     * @param string $ExternalSystemCode Внешний код отеля, задается в 1С
      */
     public function __construct(
         $wsdl,
@@ -30,7 +32,9 @@ class HotelReservationClient
         $password = null,
         $location = null,
         $connectionTimeout = 20,
-        $soapVersion = SOAP_1_2
+        $soapVersion = SOAP_1_2,
+        $ExternalSystemCode = 'API001',
+        $LanguageCode = 'RU'
     ) {
         $this->wsdl = $wsdl . '?wsdl';
         $this->login = $login;
@@ -38,6 +42,8 @@ class HotelReservationClient
         $this->location = $location !== null ? $location : $wsdl;
         $this->soapVersion = $soapVersion;
         $this->connectionTimeout = $connectionTimeout;
+        $this->ExternalSystemCode = $ExternalSystemCode;
+        $this->LanguageCode = $LanguageCode;
 
         $options = [
             'trace' => 1,
@@ -55,7 +61,7 @@ class HotelReservationClient
 
         $this->client = new SoapClient($this->wsdl, $options);
     }
-    
+
     // Универсальный вызов метода
     private function call($method, $params = [])
     {
@@ -287,11 +293,62 @@ $client = new HotelReservationClient(
 
 try {
     $params = [
-        'ExternalSystemCode' => 'API001',
-        'LanguageCode' => 'RU'
+        'ExternalSystemCode' => $client->ExternalSystemCode,
+        'LanguageCode' => $client->LanguageCode
     ];
-    $response = $client->getHotelsList($params);
-    print_r($response);
+    $responseHL = $client->getHotelsList($params);
+    //print_r($responseHL);
+
+    $params = [
+        'Hotel' => $responseHL->return->HotelParameters->HotelCode,
+        'ExternalSystemCode' => $client->ExternalSystemCode,
+        'LanguageCode' => $client->LanguageCode,
+        'RoomRate' => ''
+    ];
+    $responseHP = $client->GetHotelParameters($params);
+    //print_r($responseHP);
+    $params = [];
+    $responseIDL = $client->GetIdentityDocumentsList($params);
+    //print_r($responseIDL);
+
+    $params = [
+        'Phone' => '79219470228',
+        'EMail' => ''
+    ];
+    $responseC = $client->GetClientByPhoneAndEMail($params);
+    //print_r($responseC);
+
+    //Получаем свободные номера с ценами
+    $params = [
+        'Hotel' => $responseHL->return->HotelParameters->HotelCode,
+        'RoomType' => null,
+        'RoomQuota' => null,
+        'PeriodFrom' => '2025-11-30T00:00:00',
+        'PeriodTo' => '2025-12-01T00:00:00',
+        'ClientType' => null,
+        'RoomRates' => [],
+        'GuestsQuantity' => [
+            'Adults' => ['Quantity' => 1],
+            'Kids' => [
+                'Quantity' => 0,
+                // Если требуется вложенные данные по детям, добавить сюда
+            ],
+            'RequestAttributes' => [ //пока можно очистить, не влияет на вывод
+                'SessionID' => 123,
+                'UserID' => 321,
+                'utm_source' => '',
+                'utm_medium' => '',
+                'utm_campaign' => '',
+                'utm_content' => ''
+            ]
+        ],
+        'ClientIsAuthorized' => false,
+        'ExternalSystemCode' => $client->ExternalSystemCode,
+        'LanguageCode' => $client->LanguageCode,
+        'ExtraParameters' => []
+    ];
+    $responseARWDP = $client->GetAvailableRoomsWithDailyPrices($params);
+    print_r($responseARWDP);
 } catch (SoapFault $e) {
     echo "Ошибка SOAP: " . $e->getMessage() . PHP_EOL;
     echo "LastRequest:\n" . $client->getLastRequest() . PHP_EOL;
